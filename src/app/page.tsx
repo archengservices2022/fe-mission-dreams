@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { GoogleAuthProvider, createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut, type User } from "firebase/auth";
+import { FirebaseError } from "firebase/app";
+import { GoogleAuthProvider, createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, signOut, type User } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { flashcards, lessons, questions } from "@/data/math06";
@@ -66,4 +67,52 @@ export default function Home() {
   </main>;
 }
 
-function Auth(){const[email,setEmail]=useState("");const[password,setPassword]=useState("");const[error,setError]=useState("");async function run(mode:"login"|"signup"){try{setError("");if(mode==="signup")await createUserWithEmailAndPassword(auth,email,password);else await signInWithEmailAndPassword(auth,email,password)}catch(e){setError(e instanceof Error?e.message:"Authentication failed")}}async function google(){try{setError("");await signInWithPopup(auth,new GoogleAuthProvider())}catch(e){setError(e instanceof Error?e.message:"Google sign-in failed")}}return <main className="auth"><div className="authbox"><div className="brand">FE MISSION DREAMS</div><h1 className="title">Train smarter for the FE.</h1><p className="sub">Your first mission: MATH-06 Triangle Trigonometry.</p><div className="card"><input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)}/><input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)}/>{error&&<p className="error">{error}</p>}<button className="primary" onClick={()=>run("login")}>Sign in</button><div style={{height:8}}/><button className="secondary" onClick={()=>run("signup")}>Create student account</button><div className="divider">or</div><button className="secondary" onClick={google}>Continue with Google</button></div></div></main>}
+function friendlyAuthError(error:unknown){
+  if(!(error instanceof FirebaseError)) return "Something went wrong. Please try again.";
+  const messages:Record<string,string>={
+    "auth/invalid-email":"Please enter a valid email address.",
+    "auth/missing-password":"Please enter your password.",
+    "auth/weak-password":"Password must be at least 6 characters.",
+    "auth/email-already-in-use":"An account already exists with this email. Try signing in.",
+    "auth/invalid-credential":"Email or password is incorrect.",
+    "auth/user-not-found":"Email or password is incorrect.",
+    "auth/wrong-password":"Email or password is incorrect.",
+    "auth/popup-closed-by-user":"Google sign-in was canceled.",
+    "auth/popup-blocked":"Your browser blocked the Google sign-in window. Please allow pop-ups and try again.",
+    "auth/unauthorized-domain":"Google sign-in is not enabled for this website yet.",
+    "auth/too-many-requests":"Too many attempts. Please wait a few minutes and try again.",
+    "auth/network-request-failed":"We could not reach the sign-in service. Check your connection and try again."
+  };
+  return messages[error.code]||"We could not sign you in. Please try again.";
+}
+
+function Auth(){
+  const[email,setEmail]=useState(""); const[password,setPassword]=useState(""); const[error,setError]=useState(""); const[notice,setNotice]=useState("");
+  const[showPassword,setShowPassword]=useState(false); const[busy,setBusy]=useState(false);
+  function validate(mode:"login"|"signup"){
+    const clean=email.trim();
+    if(!clean)return "Please enter your email address.";
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean))return "Please enter a valid email address.";
+    if(!password)return "Please enter your password.";
+    if(mode==="signup"&&password.length<6)return "Password must be at least 6 characters.";
+    return "";
+  }
+  async function run(mode:"login"|"signup"){
+    const validation=validate(mode); if(validation){setError(validation);setNotice("");return;}
+    try{setBusy(true);setError("");setNotice("");if(mode==="signup")await createUserWithEmailAndPassword(auth,email.trim(),password);else await signInWithEmailAndPassword(auth,email.trim(),password)}catch(e){setError(friendlyAuthError(e))}finally{setBusy(false)}
+  }
+  async function google(){try{setBusy(true);setError("");setNotice("");await signInWithPopup(auth,new GoogleAuthProvider())}catch(e){setError(friendlyAuthError(e))}finally{setBusy(false)}}
+  async function resetPassword(){
+    const clean=email.trim(); setNotice("");
+    if(!clean){setError("Enter your email address first, then tap Forgot password.");return;}
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)){setError("Please enter a valid email address.");return;}
+    try{setBusy(true);setError("");await sendPasswordResetEmail(auth,clean);setNotice("Password reset email sent. Check your inbox.")}catch(e){setError(friendlyAuthError(e))}finally{setBusy(false)}
+  }
+  return <main className="auth"><div className="authbox"><div className="brand">FE MISSION DREAMS</div><h1 className="title">Train smarter for the FE.</h1><p className="sub">Your first mission: MATH-06 Triangle Trigonometry.</p><div className="card">
+    <label htmlFor="email" className="note">Email</label><input id="email" autoComplete="email" inputMode="email" type="email" placeholder="you@example.com" value={email} onChange={e=>{setEmail(e.target.value);setError("")}}/>
+    <label htmlFor="password" className="note">Password</label><input id="password" autoComplete="current-password" type={showPassword?"text":"password"} placeholder="Password" value={password} onChange={e=>{setPassword(e.target.value);setError("")}} onKeyDown={e=>{if(e.key==="Enter")run("login")}}/>
+    <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",margin:"-4px 0 14px"}}><label className="note" style={{display:"flex",gap:7,alignItems:"center"}}><input type="checkbox" checked={showPassword} onChange={e=>setShowPassword(e.target.checked)} style={{width:"auto",margin:0}}/> Show password</label><button type="button" className="linkbutton" onClick={resetPassword} disabled={busy}>Forgot password?</button></div>
+    {error&&<p className="error" role="alert">{error}</p>}{notice&&<p className="success" role="status">{notice}</p>}
+    <button className="primary" disabled={busy} onClick={()=>run("login")}>{busy?"Please wait…":"Sign in"}</button><div style={{height:8}}/><button className="secondary" disabled={busy} onClick={()=>run("signup")}>Create student account</button><div className="divider">or</div><button className="secondary" disabled={busy} onClick={google}>Continue with Google</button>
+  </div></div></main>
+}
