@@ -6,20 +6,19 @@ on:
     branches: [main, develop]
 
 jobs:
-  build:
+  validate:
     runs-on: ubuntu-latest
     env:
-      NEXT_PUBLIC_FIREBASE_API_KEY: AIzaSyDpicxhU7dMAyeX3i5iNRZrkSxK4917U9k
-      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: fe-mission-dreams.firebaseapp.com
-      NEXT_PUBLIC_FIREBASE_PROJECT_ID: fe-mission-dreams
-      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: fe-mission-dreams.firebasestorage.app
-      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "941094884932"
-      NEXT_PUBLIC_FIREBASE_APP_ID: 1:941094884932:web:9e9665f199367ee1c2ce11
-      NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: G-T7KJ820NW3
+      NEXT_PUBLIC_PREVIEW_SKIP_AUTH: "true"
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+      OPENAI_MODEL: "gpt-4.1-mini"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: npm install
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
       - run: npm run build

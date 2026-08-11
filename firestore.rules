@@ -1,8 +1,122 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
+    function trustedServer() {
+      return signedIn() && request.auth.token.server == true;
+    }
+
+    function isInstructorOfInstitution(institutionId) {
+      return signedIn() && institutionId != null &&
+        request.auth.uid in get(/databases/$(database)/documents/institutions/$(institutionId)).data.instructorUids;
+    }
+
+    match /subjects/{subjectId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /topics/{topicId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /questions/{questionId} {
+      allow read: if resource.data.status == "published" || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read, create, update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+
+      match /progress/{moduleId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    match /profiles/{userId} {
+      allow read: if isOwner(userId) || isAdmin() || isInstructorOfInstitution(resource.data.institutionId);
+      allow create, update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /institutions/{institutionId} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn() && request.resource.data.instructorUids == [request.auth.uid];
+      allow update: if signedIn() && request.auth.uid in resource.data.instructorUids;
+      allow delete: if false;
+    }
+
+    match /instructorMemberships/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if false;
+      allow create, update: if isOwner(userId);
+      allow delete: if false;
+    }
+
+    match /inviteCodes/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn() &&
+        request.auth.uid in get(/databases/$(database)/documents/institutions/$(request.resource.data.institutionId)).data.instructorUids;
+      allow delete: if signedIn() &&
+        request.auth.uid in get(/databases/$(database)/documents/institutions/$(resource.data.institutionId)).data.instructorUids;
+    }
+
+    match /subscriptions/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if trustedServer() || isAdmin();
+    }
+
+    match /attempts/{attemptId} {
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow read, update, delete: if (signedIn() && resource.data.uid == request.auth.uid) || isAdmin();
+    }
+
+    match /mastery/{userId}/topics/{topicId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+
+    match /studyPlans/{userId}/{document=**} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+
+    match /dailySessions/{sessionId} {
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow read, update, delete: if (signedIn() && resource.data.uid == request.auth.uid) || isAdmin();
+    }
+
+    match /errorLogs/{userId}/items/{errorId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+
+    match /mockExams/{userId}/exams/{examId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+
+    match /flashcards/{userId}/cards/{cardId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+
+    match /adminReviews/{reviewId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /usageStats/{statId} {
+      allow read, write: if isAdmin();
     }
   }
 }
