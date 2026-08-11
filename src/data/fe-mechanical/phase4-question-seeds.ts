@@ -1,0 +1,102 @@
+import type { Question, StudyModule } from "../module-types";
+
+const lessons = [
+  {
+    title: "Strict numeric entry",
+    body: "Numeric-entry FE practice is graded on the final answer only. Use the requested units and round only at the end.",
+  },
+  {
+    title: "Question metadata",
+    body: "Each Phase 4 seed question includes type, difficulty, formula, units, target time, common mistakes, and handbook keywords.",
+  },
+];
+
+const flashcards = [
+  { front: "Numeric tolerance", back: "abs(submitted - correct) <= tolerance", note: "Tolerance is for grading, not for sloppy setup." },
+  { front: "FE final answer", back: "Strict correct/incorrect", note: "No partial credit in FE Mode or mock exam grading." },
+];
+
+const questions: Question[] = [
+  {
+    id: "P4-Q01",
+    skill: "Vector components",
+    difficulty: "Medium",
+    questionType: "numeric",
+    prompt: "A 650 N force acts 35 degrees above the horizontal. Enter the vertical component in N.",
+    numericAnswer: 372.8,
+    acceptableTolerance: 1.0,
+    units: "N",
+    formulaUsed: "Fy = F sin(theta)",
+    estimatedSolvingTimeSeconds: 75,
+    commonMistakes: ["Wrong formula", "Calculator error", "Misread question"],
+    handbookKeywords: ["force components", "sine", "cosine"],
+    explanation: "Because the angle is measured from horizontal, the vertical component is opposite the angle.",
+    solution: "Step 1 - Identify the vertical component as opposite the 35 degree angle.\nStep 2 - Use Fy = F sin(theta).\nStep 3 - Fy = 650 sin(35 deg).\nStep 4 - Fy = 650(0.5736) = 372.8 N.\nFinal answer: 372.8 N.",
+    trap: "Using cosine for the vertical component when the angle is measured from horizontal.",
+    repair: "Sketch the right triangle and label opposite/adjacent before choosing sine or cosine.",
+  },
+  {
+    id: "P4-Q02",
+    skill: "Law of Cosines",
+    difficulty: "Medium",
+    questionType: "numeric",
+    prompt: "Two sides of a triangular bracket are 14 cm and 19 cm with an included angle of 48 degrees. Enter the opposite side length in cm.",
+    numericAnswer: 14.2,
+    acceptableTolerance: 0.1,
+    units: "cm",
+    formulaUsed: "c^2 = a^2 + b^2 - 2ab cos(C)",
+    estimatedSolvingTimeSeconds: 110,
+    commonMistakes: ["Wrong formula", "Arithmetic error"],
+    handbookKeywords: ["law of cosines", "triangles"],
+    explanation: "SAS information calls for the Law of Cosines.",
+    solution: "Step 1 - Use c^2 = a^2 + b^2 - 2ab cos(C).\nStep 2 - c^2 = 14^2 + 19^2 - 2(14)(19)cos(48 deg).\nStep 3 - c^2 = 196 + 361 - 532(0.6691) = 201.1.\nStep 4 - c = sqrt(201.1) = 14.18 cm.\nFinal answer: about 14.2 cm.",
+    trap: "Using the Law of Sines even though no opposite side-angle pair is known.",
+    repair: "SAS or SSS usually points to the Law of Cosines.",
+  },
+  {
+    id: "P4-Q03",
+    skill: "Axial stress",
+    difficulty: "Easy",
+    questionType: "multipleChoice",
+    prompt: "A 12 mm diameter steel rod carries a 9.0 kN axial tensile load. What is the average normal stress?",
+    choices: ["39.8 MPa", "79.6 MPa", "159 MPa", "796 MPa"],
+    answer: 1,
+    units: "MPa",
+    formulaUsed: "sigma = P / A",
+    estimatedSolvingTimeSeconds: 90,
+    commonMistakes: ["Unit conversion", "Wrong formula"],
+    handbookKeywords: ["normal stress", "axial load", "area"],
+    explanation: "Average axial stress is load divided by cross-sectional area.",
+    solution: "Step 1 - Area = pi d^2 / 4 = pi(0.012 m)^2/4 = 1.131e-4 m^2.\nStep 2 - sigma = P/A = 9000 N / 1.131e-4 m^2.\nStep 3 - sigma = 7.96e7 Pa = 79.6 MPa.\nFinal answer: 79.6 MPa.",
+    trap: "Using diameter directly as area or forgetting to convert mm to m.",
+    repair: "Convert geometry to meters before using SI stress units.",
+  },
+  {
+    id: "P4-Q04",
+    skill: "Thermal efficiency",
+    difficulty: "Easy",
+    questionType: "numeric",
+    prompt: "A heat engine receives 420 kJ of heat and rejects 260 kJ. Enter the thermal efficiency as a percent.",
+    numericAnswer: 38.1,
+    acceptableTolerance: 0.2,
+    units: "%",
+    formulaUsed: "eta = (Qin - Qout) / Qin",
+    estimatedSolvingTimeSeconds: 70,
+    commonMistakes: ["Wrong formula", "Arithmetic error"],
+    handbookKeywords: ["thermal efficiency", "heat engine"],
+    explanation: "Thermal efficiency is net work output divided by heat input.",
+    solution: "Step 1 - Wnet = Qin - Qout = 420 - 260 = 160 kJ.\nStep 2 - eta = Wnet / Qin = 160 / 420 = 0.381.\nStep 3 - Convert to percent: 38.1%.\nFinal answer: 38.1%.",
+    trap: "Dividing by rejected heat instead of heat input.",
+    repair: "For a heat engine, efficiency compares useful net work to heat supplied.",
+  },
+];
+
+export const phase4QuestionSystemModule: StudyModule = {
+  id: "P4-QSYS",
+  subjectId: "math",
+  sectionId: "trigonometry",
+  title: "Phase 4 Question System Seeds",
+  lessons,
+  flashcards,
+  questions,
+};
